@@ -8,11 +8,11 @@ class Hero(db.Model, SerializerMixin):
     name = db.Column(db.String(100), nullable=False)
     super_name = db.Column(db.String(100), nullable=False)
 
-    
-    hero_powers = db.relationship('HeroPower', backref='hero')
+    # Relationship to HeroPower
+    hero_powers = db.relationship('HeroPower', backref='hero', cascade="all, delete-orphan")
 
-    
-    serialize_rules = ('-hero_powers.hero',)  
+    # Serialization: Include hero_powers with nested power
+    serialize_rules = ('-hero_powers.hero', 'hero_powers', 'hero_powers.power')
 
     @validates('name', 'super_name')
     def validate_name_fields(self, key, value):
@@ -26,9 +26,10 @@ class Power(db.Model, SerializerMixin):
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(500), nullable=False)
 
-    
-    hero_powers = db.relationship('HeroPower', backref='power')
+    # Relationship to HeroPower
+    hero_powers = db.relationship('HeroPower', backref='power', cascade="all, delete-orphan")
 
+    # Serialization: Prevent circular reference
     serialize_rules = ('-hero_powers.power',)
 
     @validates('description')
@@ -45,7 +46,8 @@ class HeroPower(db.Model, SerializerMixin):
     hero_id = db.Column(db.Integer, db.ForeignKey('heroes.id'), nullable=False)
     power_id = db.Column(db.Integer, db.ForeignKey('powers.id'), nullable=False)
 
-    serialize_rules = ('-hero.hero_powers', '-power.hero_powers')
+    # Serialization: Include hero and power objects
+    serialize_rules = ('-hero.hero_powers', '-power.hero_powers', 'hero', 'power')
 
     @validates('strength')
     def validate_strength(self, key, value):
